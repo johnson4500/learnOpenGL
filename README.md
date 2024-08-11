@@ -1,3 +1,4 @@
+## Learning OpenGL
 Week One: 
 - Got the gist of the graphics pipeline.
 - Writing/compiling vertex and fragment shaders.
