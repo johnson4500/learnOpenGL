@@ -1,0 +1,45 @@
+learnOpenGL/*.vcxproj.filters
+learnOpenGL/*.vcxproj.user
+
+openGL/
+x64/
+Debug/
+.vs/
+
+learnOpenGL/learnOpenGL/
+learnOpenGL/x64/
+learnOpenGL/Debug/
+learnOpenGL/Release/
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
