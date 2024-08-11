@@ -8,13 +8,15 @@
 #include <iostream>
 #include <vector>
 
+// globals for the sake of learning, will abstract away with classes when i'm not lazy
+int gScreenWidth = 640;
+int gScreenHeight = 480;
 std::vector<float> positions = {
     -0.25f, -0.25f, 0.0f, // bottom left
      0.25f, -0.25f, 0.0f, // bottom right
     -0.25f,  0.25f, 0.0f, // top left
      0.25f,  0.25f, 0.0f // top right
 };
-
 std::vector<float> colors = {
     // first triangle
     1,   0,   0,
@@ -25,9 +27,11 @@ std::vector<float> colors = {
     0,   0,   1,
     0,   0,   1
 };
-
 GLfloat g_uOffset = 0.0f;
 int u_ModelMatrix;
+int u_PerspectiveMatrix;
+bool isUpPressed = false;
+bool isDownPressed = false;
 
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
@@ -71,16 +75,14 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-        g_uOffset += 0.05f;
-        std::cout << g_uOffset << std::endl;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        g_uOffset += 0.025f;
     }
 
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-        g_uOffset -= 0.05f;
-        std::cout << g_uOffset << std::endl;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        g_uOffset -= 0.025f;
     }
-}
+}   
 
 int main(void)
 {
@@ -91,7 +93,7 @@ int main(void)
         return -1;
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(640, 480, "Hello gay ass Triangle!", NULL, NULL);
+    window = glfwCreateWindow(gScreenWidth, gScreenHeight, "Hello fruity quad!", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -160,13 +162,15 @@ int main(void)
         "layout(location = 1) in vec3 vertexColors;"
 
         "uniform mat4 u_ModelMatrix;"
+        "uniform mat4 u_Perspective;"
 
         "out vec3 v_VertexColors;"
 
         "void main()\n"
         "{\n"
-        "   vec4 newPosition = u_ModelMatrix * vec4(position, 1.0f);"
-        "   gl_Position = vec4(newPosition.x, newPosition.y, newPosition.z, 1.0f);\n"
+        "   vec4 newPosition = u_Perspective * u_ModelMatrix * vec4(position, 1.0f);"
+                                                                            // dont forget w!
+        "   gl_Position = vec4(newPosition.x, newPosition.y, newPosition.z, newPosition.w);\n"
         "   v_VertexColors = vertexColors\n;"
         "}\n";
 
@@ -184,14 +188,44 @@ int main(void)
     unsigned int shader = CreateShader(vertexShader, fragmentShader);
     glUseProgram(shader);
 
-    glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, g_uOffset, 0.0f));
+    // create model matrix
+    glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
+    // get location of model matrix
     int modelMatrixLocation = glGetUniformLocation(shader, "u_ModelMatrix");
+
+    // error checks
     if (modelMatrixLocation >= 0) {
         std::cout << modelMatrixLocation << std::endl;
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
     }
     else {
         std::cout << "Could not find location of u_ModelMatrix." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    /* Projection matrix(perspective)
+    * [ 1/(aspect*tan(fov))
+    * [
+    * [
+    * [
+    * 
+    * 
+    */
+    glm::mat4 perspective = glm::perspective(glm::radians(45.0f), 
+                                            (float) (gScreenWidth / gScreenHeight), 
+                                            0.1f,
+                                            1.0f);
+
+    // get location of perspective matrix
+    int perspectiveMatrixLocation = glGetUniformLocation(shader, "u_Perspective");
+
+    // error checks
+    if (perspectiveMatrixLocation >= 0) {
+        std::cout << perspectiveMatrixLocation << std::endl;
+        glUniformMatrix4fv(perspectiveMatrixLocation, 1, GL_FALSE, &perspective[0][0]);
+    }
+    else {
+        std::cout << "Could not find location of u_Perspective." << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -217,8 +251,15 @@ int main(void)
             lastTime = currentTime;
         }
 
-        // update matrix and uniform variable
-        translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, g_uOffset, 0.0f));
+        // update perspective matrix and uniform variable
+        perspective = glm::perspective(glm::radians(45.0f),
+            (float)gScreenWidth / (float)gScreenHeight,
+            0.1f,
+            1.0f);
+        glUniformMatrix4fv(perspectiveMatrixLocation, 1, GL_FALSE, &perspective[0][0]);
+
+        // update model matrix and uniform variable
+        translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
 
         // draw call
