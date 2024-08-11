@@ -1,6 +1,6 @@
 ## Learning OpenGL
 Week One: 
-- Got the gist of the graphics pipeline.
+- Surface understanding of the graphics pipeline (vertex specfication -> vertex shader -> fragment shader).
 - Writing/compiling vertex and fragment shaders.
 - Creating vertex array objects, vertex buffer objects, index buffer objects and uniform variables.
 - GLM math library for matrix operations.
