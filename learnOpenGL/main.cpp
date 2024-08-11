@@ -75,13 +75,15 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+   /* if (key == GLFW_KEY_UP && isUpPressed) {
         g_uOffset += 0.025f;
+        std::cout << g_uOffset << std::endl;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    if (key == GLFW_KEY_DOWN && isDownPressed) {
         g_uOffset -= 0.025f;
-    }
+        std::cout << g_uOffset << std::endl;
+    }*/
 }   
 
 int main(void)
@@ -203,13 +205,11 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    /* Projection matrix(perspective)
-    * [ 1/(aspect*tan(fov))
-    * [
-    * [
-    * [
-    * 
-    * 
+    /* Projection matrix (perspective)
+    * [ 1/(aspect*tan(fov/2)),      0,                    0,                            0             ]
+    * [          0,            1/tan(fov/2),              0,                            0             ]                               
+    * [          0,                 0,         -((far+near)/(far-near))    -(*2*far*near)/(far-near)) ]
+    * [          0,                 0,                   -1,                            0             ]
     */
     glm::mat4 perspective = glm::perspective(glm::radians(45.0f), 
                                             (float) (gScreenWidth / gScreenHeight), 
@@ -217,12 +217,12 @@ int main(void)
                                             1.0f);
 
     // get location of perspective matrix
-    int perspectiveMatrixLocation = glGetUniformLocation(shader, "u_Perspective");
+    int projectionLocation = glGetUniformLocation(shader, "u_Perspective");
 
     // error checks
-    if (perspectiveMatrixLocation >= 0) {
-        std::cout << perspectiveMatrixLocation << std::endl;
-        glUniformMatrix4fv(perspectiveMatrixLocation, 1, GL_FALSE, &perspective[0][0]);
+    if (projectionLocation >= 0) {
+        std::cout << projectionLocation << std::endl;
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &perspective[0][0]);
     }
     else {
         std::cout << "Could not find location of u_Perspective." << std::endl;
@@ -256,7 +256,7 @@ int main(void)
             (float)gScreenWidth / (float)gScreenHeight,
             0.1f,
             1.0f);
-        glUniformMatrix4fv(perspectiveMatrixLocation, 1, GL_FALSE, &perspective[0][0]);
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &perspective[0][0]);
 
         // update model matrix and uniform variable
         translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
@@ -270,6 +270,14 @@ int main(void)
 
         /* Poll for and process events */
         glfwPollEvents();
+
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            g_uOffset += 0.025f;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            g_uOffset -= 0.025f;
+        }
     }
 
     glDeleteProgram(shader);
