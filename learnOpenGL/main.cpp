@@ -12,10 +12,15 @@
 int gScreenWidth = 640;
 int gScreenHeight = 480;
 std::vector<float> positions = {
-    -0.25f, -0.25f, 0.0f, // bottom left
-     0.25f, -0.25f, 0.0f, // bottom right
-    -0.25f,  0.25f, 0.0f, // top left
-     0.25f,  0.25f, 0.0f // top right
+   -0.15f, -0.15f,  0.15f, // front bottom left
+    0.15f, -0.15f,  0.15f, // front bottom right
+   -0.15f,  0.15f,  0.15f, // front top left
+    0.15f,  0.15f,  0.15f, // front top right
+                      
+   -0.15f, -0.15f, -0.15f, //  back bottom left
+    0.15f, -0.15f, -0.15f, //  back bottom right
+   -0.15f,  0.15f, -0.15f, //  back top left
+    0.15f,  0.15f, -0.15f, //  back top right
 };
 std::vector<float> colors = {
     // first triangle
@@ -32,6 +37,7 @@ int u_ModelMatrix;
 int u_PerspectiveMatrix;
 bool isUpPressed = false;
 bool isDownPressed = false;
+float degrees = 0.0f;
 
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
@@ -95,7 +101,7 @@ int main(void)
         return -1;
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(gScreenWidth, gScreenHeight, "Hello fruity quad!", NULL, NULL);
+    window = glfwCreateWindow(gScreenWidth, gScreenHeight, "Hello gay ass cube!", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -148,7 +154,18 @@ int main(void)
 
     // index buffer data
     std::vector<int> indices = {
-        2, 0, 1, 3, 2, 1
+        // front face
+        2, 0, 1, 
+        3, 2, 1,
+        // left face
+        1, 5, 3,
+        7, 3, 5,
+        // right face
+        5, 7, 4,
+        4, 6, 7,
+        // back face
+        4, 6, 2,
+        2, 0, 4
     };
 
     // generate index buffer
@@ -191,14 +208,14 @@ int main(void)
     glUseProgram(shader);
 
     // create model matrix
-    glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
     // get location of model matrix
     int modelMatrixLocation = glGetUniformLocation(shader, "u_ModelMatrix");
 
     // error checks
     if (modelMatrixLocation >= 0) {
         std::cout << modelMatrixLocation << std::endl;
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
     }
     else {
         std::cout << "Could not find location of u_ModelMatrix." << std::endl;
@@ -214,7 +231,7 @@ int main(void)
     glm::mat4 perspective = glm::perspective(glm::radians(45.0f), 
                                             (float) (gScreenWidth / gScreenHeight), 
                                             0.1f,
-                                            1.0f);
+                                            10.0f);
 
     // get location of perspective matrix
     int projectionLocation = glGetUniformLocation(shader, "u_Perspective");
@@ -229,6 +246,8 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
+
+
     // unbind current buffer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -237,10 +256,16 @@ int main(void)
     double currentTime = 0;
     int frames = 0;
 
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+
     // loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         currentTime = glfwGetTime();
         frames++;
@@ -259,11 +284,15 @@ int main(void)
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &perspective[0][0]);
 
         // update model matrix and uniform variable
-        translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
+        modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(degrees), glm::vec3(0.0f, 1.0f, 0.0f));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
+
+        if (degrees >= 360) degrees = 0;
+        degrees++;
 
         // draw call
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
