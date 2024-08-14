@@ -7,5 +7,5 @@ Week One:
 - Rendering triangles and quads.
 - Created a perspective matrix to allow quad to move along z-axis and fix aspect ratio induced stretching.
 - Created a rotation matrix to rotate objects around an axis.
-<img src="https://github.com/user-attachments/assets/fd3ad8d1-5ee6-43f9-9399-040859ce2f39/" width="350">
+<img src="https://github.com/user-attachments/assets/d9712e32-f9b9-4699-8b2d-f24f6de16291" width="350">
 
