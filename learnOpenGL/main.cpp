@@ -32,7 +32,8 @@ std::vector<float> colors = {
     0,   0,   1,
     0,   0,   1
 };
-GLfloat g_uOffset = 0.0f;
+GLfloat g_uOffset = -1.0f;
+GLfloat g_uScale = 1.0f;
 int u_ModelMatrix;
 int u_PerspectiveMatrix;
 bool isUpPressed = false;
@@ -284,6 +285,7 @@ int main(void)
         // update model matrix and uniform variable
         modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
         modelMatrix = glm::rotate(modelMatrix, glm::radians(degrees), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(g_uScale, g_uScale, g_uScale));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
 
         if (degrees >= 360) degrees = 0;
@@ -304,6 +306,14 @@ int main(void)
 
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
             g_uOffset -= 0.025f;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+            g_uScale += 0.025f;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+            g_uScale -= 0.025f;
         }
     }
 
