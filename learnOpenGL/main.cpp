@@ -101,7 +101,7 @@ int main(void)
         return -1;
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(gScreenWidth, gScreenHeight, "Hello gay ass cube!", NULL, NULL);
+    window = glfwCreateWindow(gScreenWidth, gScreenHeight, "Hello cube!", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -245,8 +245,6 @@ int main(void)
         std::cout << "Could not find location of u_Perspective." << std::endl;
         exit(EXIT_FAILURE);
     }
-
-
 
     // unbind current buffer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
