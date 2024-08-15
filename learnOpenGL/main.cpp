@@ -2,46 +2,20 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include <Application.hpp>
+#include <Mesh3D.hpp>
 #include <cstdio>
 #include <string>
 #include <ostream>
 #include <iostream>
 #include <vector>
 
-// globals for the sake of learning, will abstract away with classes when i'm not lazy
-int gScreenWidth = 640;
-int gScreenHeight = 480;
-std::vector<float> positions = {
-   -0.15f, -0.15f,  0.15f, // front bottom left
-    0.15f, -0.15f,  0.15f, // front bottom right
-   -0.15f,  0.15f,  0.15f, // front top left
-    0.15f,  0.15f,  0.15f, // front top right
-                      
-   -0.15f, -0.15f, -0.15f, //  back bottom left
-    0.15f, -0.15f, -0.15f, //  back bottom right
-   -0.15f,  0.15f, -0.15f, //  back top left
-    0.15f,  0.15f, -0.15f, //  back top right
-};
-std::vector<float> colors = {
-    // first triangle
-    1,   0,   0,
-    0,   1,   0,
-    0,   0,   1,
-    // second triangle
-    0,   1,   0,
-    0,   0,   1,
-    0,   0,   1
-};
-GLfloat g_uOffset = -1.0f;
-GLfloat g_uScale = 1.0f;
-int u_ModelMatrix;
-int u_PerspectiveMatrix;
+Application App = Application();
+Mesh3D mesh1 = Mesh3D();
 bool isUpPressed = false;
 bool isDownPressed = false;
-float degrees = 0.0f;
 
-static unsigned int CompileShader(unsigned int type, const std::string& source)
-{
+static unsigned int CompileShader(unsigned int type, const std::string& source) {
     unsigned int id = glCreateShader(type);
     const char* src = source.c_str();
     glShaderSource(id, 1, &src, nullptr);
@@ -49,8 +23,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-    if (result == GL_FALSE)
-    {
+    if (result == GL_FALSE) {
         int length;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char* message = (char*)alloca(length * sizeof(char));
@@ -63,8 +36,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
     return id;
 }
 
-static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
-{
+static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader) {
     unsigned int program = glCreateProgram();
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
@@ -80,83 +52,68 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
     return program;
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-   /* if (key == GLFW_KEY_UP && isUpPressed) {
-        g_uOffset += 0.025f;
-        std::cout << g_uOffset << std::endl;
-    }
+//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+// 
+//}   
 
-    if (key == GLFW_KEY_DOWN && isDownPressed) {
-        g_uOffset -= 0.025f;
-        std::cout << g_uOffset << std::endl;
-    }*/
-}   
-
-int main(void)
-{
-    GLFWwindow* window;
-
+void initializeProgram(Application *App) {
     // Initialize the library
     if (!glfwInit())
-        return -1;
+        exit(EXIT_FAILURE);
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(gScreenWidth, gScreenHeight, "Hello cube!", NULL, NULL);
-    if (!window)
+    App->m_Window = glfwCreateWindow(App->m_ScreenWidth, App->m_ScreenHeight, "Hello cube!", NULL, NULL);
+    if (!App->m_Window)
     {
         glfwTerminate();
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     // Make the window's context current
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(App->m_Window);
 
-    // set key input callback function
-    glfwSetKeyCallback(window, key_callback);
-    glfwSwapInterval(1);
-
-    GLenum err = glewInit();
-    if (GLEW_OK != err)
+    App->m_Err = glewInit();
+    if (GLEW_OK != App->m_Err)
     {
         // Problem: glewInit failed
-        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-        return 1;
+        fprintf(stderr, "Error: %s\n", glewGetErrorString(App->m_Err));
+        exit(EXIT_FAILURE);
     }
     fprintf(stdout, "GLEW version: %s\n", glewGetString(GLEW_VERSION));
     fprintf(stdout, "GL version: %s\n", glGetString(GL_VERSION));
+}
 
-    // vertex array object and buffer variables
-    unsigned int vao;
-    unsigned int bufferObj;
-    unsigned int colorBufferObj;
-    unsigned int indexBufferObj;
+void vertexSpecification(Mesh3D *mesh) {
 
-    // create vertex array object
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    // position buffer data
+    std::vector<float> positions = {
+   -0.15f, -0.15f,  0.15f, // front bottom left
+    0.15f, -0.15f,  0.15f, // front bottom right
+   -0.15f,  0.15f,  0.15f, // front top left
+    0.15f,  0.15f,  0.15f, // front top right
 
-    /* 3 step process of creating a buffer, generate->bind->assign data.
-       Below, we create the buffer containing vertices. */
-    glGenBuffers(1, &bufferObj);
-    glBindBuffer(GL_ARRAY_BUFFER, bufferObj);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
+   -0.15f, -0.15f, -0.15f, //  back bottom left
+    0.15f, -0.15f, -0.15f, //  back bottom right
+   -0.15f,  0.15f, -0.15f, //  back top left
+    0.15f,  0.15f, -0.15f, //  back top right
+    };
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    // generate color buffer
-    glGenBuffers(1, &colorBufferObj);
-    glBindBuffer(GL_ARRAY_BUFFER, colorBufferObj);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * colors.size(), colors.data(), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    // color buffer data
+    std::vector<float> colors = {
+        // first triangle
+        1,   0,   0,
+        0,   1,   0,
+        0,   0,   1,
+        // second triangle
+        0,   1,   0,
+        0,   0,   1,
+        0,   0,   1
+    };
 
     // index buffer data
     std::vector<int> indices = {
         // front face
-        2, 0, 1, 
+        2, 0, 1,
         3, 2, 1,
         // left face
         1, 5, 3,
@@ -166,14 +123,50 @@ int main(void)
         4, 6, 7,
         // back face
         4, 6, 2,
-        2, 0, 4
+        2, 0, 4,
+        // top face
+        3, 7, 6,
+        3, 6, 2,
+        // bottom face
+        1, 5, 4,
+        1, 4, 0
     };
+    // create vertex array object
+    glGenVertexArrays(1, &(mesh->m_VAO));
+    glBindVertexArray(mesh->m_VAO);
+
+    /* 3 step process of creating a buffer, generate->bind->assign data.
+       Below, we create the buffer containing vertices. */
+    glGenBuffers(1, &(mesh->m_BufferObj));
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->m_BufferObj);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    // generate color buffer
+    glGenBuffers(1, &(mesh->m_ColorBufferObj));
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->m_ColorBufferObj);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * colors.size(), colors.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
     // generate index buffer
-    glGenBuffers(1, &indexBufferObj);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObj);
+    glGenBuffers(1, &(mesh->m_IndexBufferObj));
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->m_IndexBufferObj);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
+    //// unbind current buffer
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
+    // Disable any open attributes
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+}
+
+void createGraphicsPipeline(Application *App) {
     // GLSL vertex and fragment shader source code stored in strings
     std::string vertexShader =
         "#version 330 core\n"
@@ -189,7 +182,7 @@ int main(void)
         "void main()\n"
         "{\n"
         "   vec4 newPosition = u_Perspective * u_ModelMatrix * vec4(position, 1.0f);"
-                                                                            // dont forget w!
+        // dont forget w!
         "   gl_Position = vec4(newPosition.x, newPosition.y, newPosition.z, newPosition.w);\n"
         "   v_VertexColors = vertexColors\n;"
         "}\n";
@@ -205,17 +198,27 @@ int main(void)
         "   fragColor = vec4(v_VertexColors, 1.0f);\n"
         "}\n";
 
-    unsigned int shader = CreateShader(vertexShader, fragmentShader);
-    glUseProgram(shader);
+    App->m_ShaderProgram = CreateShader(vertexShader, fragmentShader);
+    //glUseProgram(App->m_ShaderProgram);
+}
 
-    // create model matrix
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
+void preDraw(Mesh3D *mesh, Application *app) {
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(app->m_ShaderProgram);
+
+    // create model matrix and apply transformations
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, mesh->m_uOffset));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(mesh->m_uRotateDegrees), glm::vec3(1.0f, 1.0f, 0.0f));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(mesh->m_uScale, mesh->m_uScale, mesh->m_uScale));
+
     // get location of model matrix
-    int modelMatrixLocation = glGetUniformLocation(shader, "u_ModelMatrix");
+    int modelMatrixLocation = glGetUniformLocation(app->m_ShaderProgram, "u_ModelMatrix");
 
     // error checks
     if (modelMatrixLocation >= 0) {
-        std::cout << modelMatrixLocation << std::endl;
+        //std::cout << modelMatrixLocation << std::endl;
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
     }
     else {
@@ -225,35 +228,85 @@ int main(void)
 
     /* Projection matrix (perspective)
     * [ 1/(aspect*tan(fov/2)),      0,                    0,                            0             ]
-    * [          0,            1/tan(fov/2),              0,                            0             ]                               
+    * [          0,            1/tan(fov/2),              0,                            0             ]
     * [          0,                 0,         -((far+near)/(far-near))    -(*2*far*near)/(far-near)) ]
     * [          0,                 0,                   -1,                            0             ]
     */
-    glm::mat4 perspective = glm::perspective(glm::radians(45.0f), 
-                                            (float) (gScreenWidth / gScreenHeight), 
-                                            0.1f,
-                                            10.0f);
+    glm::mat4 perspective = glm::perspective(glm::radians(45.0f),
+        (float)app->m_ScreenWidth / (float)app->m_ScreenHeight,
+        0.1f,
+        10.0f);
 
     // get location of perspective matrix
-    int projectionLocation = glGetUniformLocation(shader, "u_Perspective");
+    int projectionLocation = glGetUniformLocation(app->m_ShaderProgram, "u_Perspective");
 
     // error checks
     if (projectionLocation >= 0) {
-        std::cout << projectionLocation << std::endl;
+        //std::cout << projectionLocation << std::endl;
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &perspective[0][0]);
-    }
-    else {
+    } else {
         std::cout << "Could not find location of u_Perspective." << std::endl;
         exit(EXIT_FAILURE);
     }
+}
 
-    // unbind current buffer
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+void mainLoop(Application *App) {
+    // loop until the user closes the window
+    while (!glfwWindowShouldClose(App->m_Window)) {
+        App->m_LastTime = glfwGetTime();
+        // calculate frames per second
+        /*App->m_LastTime = App->m_CurrentTime;*/
+        App->m_CurrentTime = glfwGetTime();
+        /*float dt = App->m_CurrentTime - App->m_LastTime;
+        std::cout << dt << std::endl;*/
+        App->m_Frames++;
+        if (App->m_CurrentTime - App->m_LastTime >= 1.0f) {
+            std::cout << App->m_Frames << std::endl;
+            App->m_Frames = 0;
+            App->m_LastTime = App->m_CurrentTime;
+        }
+        
+        // predraw
+        preDraw(&mesh1, App);
 
-    // setup fps calculation variables
-    double lastTime = glfwGetTime();
-    double currentTime = 0;
-    int frames = 0;
+        // increase cube rotation with each frame
+        if (mesh1.m_uRotateDegrees >= 360) mesh1.m_uRotateDegrees = 0;
+        mesh1.m_uRotateDegrees += 0.05f;
+
+        // draw call
+        glBindVertexArray(mesh1.m_VAO);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        // Swap front and back buffers
+        glfwSwapBuffers(App->m_Window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+
+        if (glfwGetKey(App->m_Window, GLFW_KEY_UP) == GLFW_PRESS) {
+            mesh1.m_uOffset += 0.025f;
+        }
+
+        if (glfwGetKey(App->m_Window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            mesh1.m_uOffset -= 0.025f;
+        }
+
+        if (glfwGetKey(App->m_Window, GLFW_KEY_E) == GLFW_PRESS) {
+            mesh1.m_uScale += 0.025f;
+        }
+
+        if (glfwGetKey(App->m_Window, GLFW_KEY_Q) == GLFW_PRESS) {
+            mesh1.m_uScale -= 0.025f;
+        }
+    }
+}
+
+int main(void) {
+    initializeProgram(&App);
+    
+    vertexSpecification(&mesh1);
+
+    createGraphicsPipeline(&App);
 
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
@@ -261,63 +314,9 @@ int main(void)
     // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
 
-    // loop until the user closes the window
-    while (!glfwWindowShouldClose(window))
-    {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    mainLoop(&App);
 
-        currentTime = glfwGetTime();
-        frames++;
-
-        if (currentTime - lastTime >= 1.0f) {
-            std::cout << frames << std::endl;
-            frames = 0;
-            lastTime = currentTime;
-        }
-
-        // update perspective matrix and uniform variable
-        perspective = glm::perspective(glm::radians(45.0f),
-            (float)gScreenWidth / (float)gScreenHeight,
-            0.1f,
-            1.0f);
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &perspective[0][0]);
-
-        // update model matrix and uniform variable
-        modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_uOffset));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(degrees), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(g_uScale, g_uScale, g_uScale));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
-
-        if (degrees >= 360) degrees = 0;
-        degrees++;
-
-        // draw call
-        glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
-
-        // Swap front and back buffers
-        glfwSwapBuffers(window);
-
-        /* Poll for and process events */
-        glfwPollEvents();
-
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            g_uOffset += 0.025f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            g_uOffset -= 0.025f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            g_uScale += 0.025f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            g_uScale -= 0.025f;
-        }
-    }
-
-    glDeleteProgram(shader);
+    glDeleteProgram(App.m_ShaderProgram);
     glfwTerminate();
     return 0;
 }
