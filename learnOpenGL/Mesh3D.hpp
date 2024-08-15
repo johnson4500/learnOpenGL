@@ -1,3 +1,5 @@
+#ifndef MESH3D_HPP
+#define MESH3D_HPP
 #include <GL/glew.h>
 struct Mesh3D {
     // vertex array object and buffer variables
@@ -11,3 +13,5 @@ struct Mesh3D {
     GLfloat m_uRotateDegrees = 0.0f;
 
 };
+
+#endif
