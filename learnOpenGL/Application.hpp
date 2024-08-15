@@ -1,5 +1,3 @@
-#ifndef APP_HPP
-#define APP_HPP
 #include <GLFW/glfw3.h>
 
 struct Application {
@@ -14,6 +12,3 @@ struct Application {
 	double m_CurrentTime = 0;
 	int m_Frames = 0;
 };
-
-
-#endif
