@@ -136,6 +136,7 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Application.hpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mesh3D.hpp" />

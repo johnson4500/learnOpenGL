@@ -137,8 +137,8 @@ void vertexSpecification(Mesh3D *mesh) {
 
     /* 3 step process of creating a buffer, generate->bind->assign data.
        Below, we create the buffer containing vertices. */
-    glGenBuffers(1, &(mesh->m_BufferObj));
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->m_BufferObj);
+    glGenBuffers(1, &(mesh->m_VertexBufferObj));
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->m_VertexBufferObj);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
@@ -202,10 +202,19 @@ void createGraphicsPipeline(Application *App) {
     //glUseProgram(App->m_ShaderProgram);
 }
 
-void preDraw(Mesh3D *mesh, Application *app) {
 
+
+void meshUpdate(Mesh3D *mesh, Application *app) {
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+
+    glViewport(0, 0, app->m_ScreenWidth, app->m_ScreenHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // std::cout << app->m_ShaderProgram;
     glUseProgram(app->m_ShaderProgram);
 
     // create model matrix and apply transformations
@@ -250,11 +259,13 @@ void preDraw(Mesh3D *mesh, Application *app) {
     }
 
     // increase cube rotation with each frame
-    if (mesh1.m_uRotateDegrees >= 360) mesh1.m_uRotateDegrees = 0;
-    mesh1.m_uRotateDegrees += 0.05f;
+    if (mesh->m_uRotateDegrees >= 360) mesh->m_uRotateDegrees = 0;
+    mesh->m_uRotateDegrees += 0.05f;
 }
 
-void drawMesh(Mesh3D *mesh, unsigned int pipeline) {
+void meshDraw(Mesh3D *mesh, unsigned int pipeline) {
+    if (mesh == nullptr) return;
+
     // per mesh, choose pipeline to be used
     glUseProgram(pipeline);
     
@@ -266,6 +277,11 @@ void drawMesh(Mesh3D *mesh, unsigned int pipeline) {
 
     // stop using current pipeline
     glUseProgram(0);
+}
+
+void meshDelete(Mesh3D *mesh) {
+    glDeleteBuffers(1, &(mesh->m_VertexBufferObj));
+    glDeleteVertexArrays(1, &(mesh->m_VAO));
 }
 
 void keyInput(Application *App) {
@@ -306,10 +322,10 @@ void mainLoop(Application *App) {
         keyInput(App);
         
         // predraw
-        preDraw(&mesh1, App);
+        meshUpdate(&mesh1, App);
 
         // draw call
-        drawMesh(&mesh1, App->m_ShaderProgram);
+        meshDraw(&mesh1, App->m_ShaderProgram);
 
         // Swap front and back buffers
         glfwSwapBuffers(App->m_Window);
@@ -319,6 +335,13 @@ void mainLoop(Application *App) {
     }
 }
 
+int cleanUp() {
+    meshDelete(&mesh1);
+    glDeleteProgram(App.m_ShaderProgram);
+    glfwTerminate();
+    return 0;
+}
+
 int main(void) {
     initializeProgram(&App);
     
@@ -326,15 +349,8 @@ int main(void) {
 
     createGraphicsPipeline(&App);
 
-    // Enable depth test
-    glEnable(GL_DEPTH_TEST);
-
-    // Accept fragment if it closer to the camera than the former one
-    glDepthFunc(GL_LESS);
-
     mainLoop(&App);
 
-    glDeleteProgram(App.m_ShaderProgram);
-    glfwTerminate();
-    return 0;
+    // delete all necesary components
+    return cleanUp();
 }
