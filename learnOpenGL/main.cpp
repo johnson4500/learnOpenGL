@@ -248,6 +248,42 @@ void preDraw(Mesh3D *mesh, Application *app) {
         std::cout << "Could not find location of u_Perspective." << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    // increase cube rotation with each frame
+    if (mesh1.m_uRotateDegrees >= 360) mesh1.m_uRotateDegrees = 0;
+    mesh1.m_uRotateDegrees += 0.05f;
+}
+
+void drawMesh(Mesh3D *mesh, unsigned int pipeline) {
+    // per mesh, choose pipeline to be used
+    glUseProgram(pipeline);
+    
+    // enable attributes
+    glBindVertexArray(mesh->m_VAO);
+
+    // render data
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+    // stop using current pipeline
+    glUseProgram(0);
+}
+
+void keyInput(Application *App) {
+    if (glfwGetKey(App->m_Window, GLFW_KEY_UP) == GLFW_PRESS) {
+        mesh1.m_uOffset += 0.025f;
+    }
+
+    if (glfwGetKey(App->m_Window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        mesh1.m_uOffset -= 0.025f;
+    }
+
+    if (glfwGetKey(App->m_Window, GLFW_KEY_E) == GLFW_PRESS) {
+        mesh1.m_uScale += 0.025f;
+    }
+
+    if (glfwGetKey(App->m_Window, GLFW_KEY_Q) == GLFW_PRESS) {
+        mesh1.m_uScale -= 0.025f;
+    }
 }
 
 void mainLoop(Application *App) {
@@ -265,39 +301,21 @@ void mainLoop(Application *App) {
             App->m_Frames = 0;
             App->m_LastTime = App->m_CurrentTime;
         }
+
+        // input
+        keyInput(App);
         
         // predraw
         preDraw(&mesh1, App);
 
-        // increase cube rotation with each frame
-        if (mesh1.m_uRotateDegrees >= 360) mesh1.m_uRotateDegrees = 0;
-        mesh1.m_uRotateDegrees += 0.05f;
-
         // draw call
-        glBindVertexArray(mesh1.m_VAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        drawMesh(&mesh1, App->m_ShaderProgram);
 
         // Swap front and back buffers
         glfwSwapBuffers(App->m_Window);
 
         /* Poll for and process events */
         glfwPollEvents();
-
-        if (glfwGetKey(App->m_Window, GLFW_KEY_UP) == GLFW_PRESS) {
-            mesh1.m_uOffset += 0.025f;
-        }
-
-        if (glfwGetKey(App->m_Window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            mesh1.m_uOffset -= 0.025f;
-        }
-
-        if (glfwGetKey(App->m_Window, GLFW_KEY_E) == GLFW_PRESS) {
-            mesh1.m_uScale += 0.025f;
-        }
-
-        if (glfwGetKey(App->m_Window, GLFW_KEY_Q) == GLFW_PRESS) {
-            mesh1.m_uScale -= 0.025f;
-        }
     }
 }
 
