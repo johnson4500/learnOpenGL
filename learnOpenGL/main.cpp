@@ -1,5 +1,3 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -11,15 +9,6 @@
 #include <ostream>
 #include <iostream>
 #include <vector>
-
-
-Application App = Application();
-Mesh3D mesh1 = Mesh3D();
-Mesh3D mesh2 = Mesh3D();
-bool isUpPressed = false;
-bool isDownPressed = false;
-unsigned int texture;
-int widthImg, heightImg, numColCh;
 
 static unsigned int CompileShader(unsigned int type, const std::string& source) {
     unsigned int id = glCreateShader(type);
@@ -58,162 +47,7 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
     return program;
 }
 
-//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-// 
-//}   
-
-void initializeProgram(Application* App) {
-    // Initialize the library
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
-
-    // Create a windowed mode window and its OpenGL context
-    App->m_Window = glfwCreateWindow(App->m_ScreenWidth, App->m_ScreenHeight, "Hello cube!", NULL, NULL);
-    if (!App->m_Window)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
-
-    // Make the window's context current
-    glfwMakeContextCurrent(App->m_Window);
-
-    App->m_Err = glewInit();
-    if (GLEW_OK != App->m_Err)
-    {
-        // Problem: glewInit failed
-        fprintf(stderr, "Error: %s\n", glewGetErrorString(App->m_Err));
-        exit(EXIT_FAILURE);
-    }
-    fprintf(stdout, "GLEW version: %s\n", glewGetString(GLEW_VERSION));
-    fprintf(stdout, "GL version: %s\n", glGetString(GL_VERSION));
-}
-
-void vertexSpecification(Mesh3D* mesh) {
-    // position buffer data
-    std::vector<float> positions = {
-        // Top
-         -1.0, 1.0, -1.0,   0, 0,
-         -1.0, 1.0, 1.0,    0, 1,
-         1.0, 1.0, 1.0,     1, 1,
-         1.0, 1.0, -1.0,    1, 0,
-
-         // Left
-         -1.0, 1.0, 1.0,    0, 0,
-         -1.0, -1.0, 1.0,   1, 0,
-         -1.0, -1.0, -1.0,  1, 1,
-         -1.0, 1.0, -1.0,   0, 1,
-
-         // Right
-         1.0, 1.0, 1.0,    1, 1,
-         1.0, -1.0, 1.0,   0, 1,
-         1.0, -1.0, -1.0,  0, 0,
-         1.0, 1.0, -1.0,   1, 0,
-
-         // Front
-         1.0, 1.0, 1.0,    1, 1,
-         1.0, -1.0, 1.0,    1, 0,
-         -1.0, -1.0, 1.0,    0, 0,
-         -1.0, 1.0, 1.0,    0, 1,
-
-         // Back
-         1.0, 1.0, -1.0,    0, 0,
-         1.0, -1.0, -1.0,    0, 1,
-         -1.0, -1.0, -1.0,    1, 1,
-         -1.0, 1.0, -1.0,    1, 0,
-
-         // Bottom
-         -1.0, -1.0, -1.0,   1, 1,
-         -1.0, -1.0, 1.0,    1, 0,
-         1.0, -1.0, 1.0,     0, 0,
-         1.0, -1.0, -1.0,    0, 1,
-    };
-
-    // index buffer data
-    std::vector<int> indices = {
-        // Top
-        0, 1, 2,
-        0, 2, 3,
-
-        // Left
-        5, 4, 6,
-        6, 4, 7,
-
-        // Right
-        8, 9, 10,
-        8, 10, 11,
-
-        // Front
-        13, 12, 14,
-        15, 14, 12,
-
-        // Back
-        16, 17, 18,
-        16, 18, 19,
-
-        // Bottom
-        21, 20, 22,
-        22, 20, 23
-    };
-
-    // create vertex array object
-    glGenVertexArrays(1, &(mesh->m_VAO));
-    glBindVertexArray(mesh->m_VAO);
-
-    // generate->bind->assign data.
-    glGenBuffers(1, &(mesh->m_VertexBufferObj));
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->m_VertexBufferObj);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
-
-    // pos
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-
-    // tex coords
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // generate index buffer
-    glGenBuffers(1, &(mesh->m_IndexBufferObj));
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->m_IndexBufferObj);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
-
-    // unbind current buffer
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glBindVertexArray(0);
-    // Disable any open attributes
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
-
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    unsigned char* data = stbi_load("sample3b.png", &widthImg, &heightImg, &numColCh, STBI_rgb_alpha);
-    if (!data) {
-        std::cerr << "Failed to load image: " << stbi_failure_reason() << std::endl;
-        exit(EXIT_FAILURE);
-
-    }
-
-    std::cout << "Image loaded successfully: " << widthImg << "x" << heightImg << std::endl;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, widthImg, heightImg, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(data);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void createGraphicsPipeline(Application* App) {
+void createGraphicsPipeline(Application *App) {
     // GLSL vertex and fragment shader source code stored in strings
     std::string vertexShader =
         "#version 330 core\n"
@@ -252,25 +86,13 @@ void createGraphicsPipeline(Application* App) {
     App->m_ShaderProgram = CreateShader(vertexShader, fragmentShader);
 }
 
-void meshUpdate(Mesh3D* mesh, Application* app, float dt) {
-    glUseProgram(app->m_ShaderProgram);
-
-    // enable depth test
-    glEnable(GL_DEPTH_TEST);
-
-    // accept fragment if it closer to the camera than the former one
-    glDepthFunc(GL_LESS);
-
-    glViewport(0, 0, app->m_ScreenWidth, app->m_ScreenHeight);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-;
+void meshUpdate(Mesh3D *mesh, Application *app, float dt) {
     // create model matrix and apply transformations
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, mesh->m_uOffset));
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), mesh->translate);
     modelMatrix = glm::rotate(modelMatrix, glm::radians(mesh->m_uRotateDegrees), glm::vec3(1.0f, 1.0f, 0.0f));
     modelMatrix = glm::scale(modelMatrix, glm::vec3(mesh->m_uScale, mesh->m_uScale, mesh->m_uScale));
 
     // get location of model matrix
-    
     int modelMatrixLocation = glGetUniformLocation(app->m_ShaderProgram, "u_ModelMatrix");
     // error checks
     if (modelMatrixLocation >= 0) {
@@ -282,12 +104,11 @@ void meshUpdate(Mesh3D* mesh, Application* app, float dt) {
         exit(EXIT_FAILURE);
     }
 
-    
     // create perspective matrix
     glm::mat4 perspective = glm::perspective(glm::radians(45.0f),
         (float)app->m_ScreenWidth / (float)app->m_ScreenHeight,
         0.1f,
-        10.0f);
+        100.0f);
 
     // get location of perspective matrix
     int projectionLocation = glGetUniformLocation(app->m_ShaderProgram, "u_Perspective");
@@ -309,51 +130,40 @@ void meshUpdate(Mesh3D* mesh, Application* app, float dt) {
     glUniform1i(texLocation, 0);
 }
 
-void meshDraw(Mesh3D* mesh, unsigned int pipeline) {
-    if (mesh == nullptr) return;
-
-    // per mesh, choose pipeline to be used
-    glUseProgram(pipeline);
-
-    // bind texture
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // enable attributes
-    glBindVertexArray(mesh->m_VAO);
-
-    // render data
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-
-    // stop using current pipeline
-    glUseProgram(0);
-}
-
 void meshDelete(Mesh3D* mesh) {
     glDeleteBuffers(1, &(mesh->m_VertexBufferObj));
     glDeleteVertexArrays(1, &(mesh->m_VAO));
 }
 
-void keyInput(Application* App, float dt) {
+void keyInput(Application *App, Mesh3D *mesh, float dt) {
     if (glfwGetKey(App->m_Window, GLFW_KEY_UP) == GLFW_PRESS) {
-        mesh1.m_uOffset += 5 * dt;
+        mesh->translate.y += 5 * dt;
     }
 
     if (glfwGetKey(App->m_Window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        mesh1.m_uOffset -= 5 * dt;
+        mesh->translate.y -= 5 * dt;
+    }
+
+    if (glfwGetKey(App->m_Window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        mesh->translate.x += 5 * dt;
+    }
+
+    if (glfwGetKey(App->m_Window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        mesh->translate.x -= 5 * dt;
     }
 
     if (glfwGetKey(App->m_Window, GLFW_KEY_E) == GLFW_PRESS) {
-        if (mesh1.m_uScale <= 1.0f) mesh1.m_uScale += 2 * dt;
-        else mesh1.m_uScale = 1.0f;
+        if (mesh->m_uScale <= 1.0f) mesh->m_uScale += 2 * dt;
+        else mesh->m_uScale = 1.0f;
     }
 
     if (glfwGetKey(App->m_Window, GLFW_KEY_Q) == GLFW_PRESS) {
-        if (mesh1.m_uScale >= 0.1f) mesh1.m_uScale -= 2 * dt;
-        else mesh1.m_uScale = 0.1f;
+        if (mesh->m_uScale >= 0.1f) mesh->m_uScale -= 2 * dt;
+        else mesh->m_uScale = 0.1f;
     }
 }
 
-void mainLoop(Application* App) {
+void mainLoop(Application *App, std::vector<Mesh3D*> *meshes) {
     // loop until the user closes the window
     float previousTime = 0.0;
     float currentTime = 0.0;
@@ -364,14 +174,25 @@ void mainLoop(Application* App) {
         dt = currentTime - previousTime;
         previousTime = currentTime;
 
+        glUseProgram(App->m_ShaderProgram);
+
+        // enable depth test
+        glEnable(GL_DEPTH_TEST);
+
+        // accept fragment if it closer to the camera than the former one
+        glDepthFunc(GL_LESS);
+
+        glViewport(0, 0, App->m_ScreenWidth, App->m_ScreenHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         // input
-        keyInput(App, dt);
+        keyInput(App, meshes->at(0), dt);
 
-        // predraw
-        meshUpdate(&mesh1, App, dt);
-
-        // draw call
-        meshDraw(&mesh1, App->m_ShaderProgram);
+        // draw meshes
+        for (int i = 0; i < meshes->size(); i++) {
+            meshUpdate(meshes->at(i), App, dt);
+            meshes->at(i)->draw(App->m_ShaderProgram);
+        }
 
         // Swap front and back buffers
         glfwSwapBuffers(App->m_Window);
@@ -381,25 +202,33 @@ void mainLoop(Application* App) {
     }
 }
 
-int cleanUp() {
-    meshDelete(&mesh1);
-    glDeleteProgram(App.m_ShaderProgram);
+int cleanUp(Application *App) {
+    glDeleteProgram(App->m_ShaderProgram);
     glfwTerminate();
     return 0;
 }
 
 int main(void) {
-    initializeProgram(&App);
-    int width, height, channels;
+    Application App = Application();
+    Mesh3D mesh1 = Mesh3D();
+    mesh1.translate.z = -10.0f;
+    mesh1.translate.x = 2.0f;
+    Mesh3D mesh2 = Mesh3D();
+    mesh2.translate.z = -10.0f;
+    mesh2.translate.x = -2.0f;
+    Mesh3D mesh3 = Mesh3D();
+    mesh3.translate.z = -10.0f;
+    mesh3.translate.x = 4.0f;
 
-    stbi_set_flip_vertically_on_load(true);
-
-    vertexSpecification(&mesh1);
+    std::vector<Mesh3D*> meshes = std::vector<Mesh3D*>();
+    meshes.push_back(&mesh1);
+    meshes.push_back(&mesh2);
+    meshes.push_back(&mesh3);
 
     createGraphicsPipeline(&App);
 
-    mainLoop(&App);
+    mainLoop(&App, &meshes);
 
     // delete all necesary components
-    return cleanUp();
+    return cleanUp(&App);
 }
